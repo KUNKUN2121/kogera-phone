@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'game.dart';
 
 class RoomCreate extends StatefulWidget {
   const RoomCreate({super.key});
@@ -100,7 +101,14 @@ class _RoomCreateState extends State<RoomCreate> {
               ),
             ],
           ),
-          ElevatedButton(onPressed: () {}, child: Text('ゲーム開始')),
+          ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => GamePage()),
+                );
+              },
+              child: Text('ゲーム開始')),
         ],
       )),
     );
