@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kogera_phone/game.dart';
 import 'app.dart';
 import 'rommSelect.dart';
 import 'roomCreate.dart';
@@ -23,8 +24,7 @@ class MyApp extends StatelessWidget {
 
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
       routes: {
-        // "/MainPage": (BuildContext context) => HomePage(),
-        // "/calenderPage": (BuildContext context) => CalenderPage(),
+        "/gamepage": (BuildContext context) => GamePage(),
       },
     );
   }

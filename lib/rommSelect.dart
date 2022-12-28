@@ -4,6 +4,8 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'dart:convert';
 import 'package:http/http.dart';
 import 'card.dart';
+import 'game.dart';
+import 'joinRoom.dart';
 
 class GameLobby extends StatefulWidget {
   const GameLobby({super.key});
@@ -153,15 +155,30 @@ class _GameLobbyState extends State<GameLobby> {
                           // mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             ElevatedButton(
-                                child: Text('参加'),
-                                style: ElevatedButton.styleFrom(
-                                  primary: Colors.blue,
-                                  onPrimary: Colors.black,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                              child: Text('参加'),
+                              style: ElevatedButton.styleFrom(
+                                primary: Colors.blue,
+                                onPrimary: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                onPressed: () async {})
+                              ),
+                              onPressed: () async {
+                                // print(imgURL);
+                                await Navigator.of(context)
+                                    .pushNamed(
+                                  "/gamepage",
+                                  arguments: joinRoomModel(
+                                    name: 'thisisname',
+                                    roomid: roomId,
+                                  ),
+                                )
+                                    .then((value) {
+                                  // 再描画
+                                  setState(() {});
+                                });
+                              },
+                            ),
                           ],
                         ),
                       ),
