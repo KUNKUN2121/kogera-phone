@@ -4,6 +4,7 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:kogera_phone/main.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 import 'joinRoom.dart';
+import 'dialog.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -113,15 +114,45 @@ class _GamePageState extends State<GamePage> {
               ),
             ),
             ElevatedButton(
-                onPressed: () {
-                  _sendMessage();
-                },
-                child: Text('次へ')),
+              child: Text('次へ'),
+              onPressed: () {
+                _sendMessage();
+              },
+            ),
             ElevatedButton(
-                onPressed: () {
-                  _JoinGroup('room1');
-                },
-                child: Text('Join'))
+              child: Text(
+                'こげら！！！',
+                style: TextStyle(fontSize: 30),
+              ),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) {
+                    return AlertDialog(
+                      title: Text("本当にこげらしますか"),
+                      actions: <Widget>[
+                        ElevatedButton(
+                            child: Text("はい"),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            }),
+                        ElevatedButton(
+                            child: Text("いいえ"),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            }),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+            ElevatedButton(
+              child: Text('Join'),
+              onPressed: () {
+                _JoinGroup('room1');
+              },
+            )
           ],
         ),
       ),
