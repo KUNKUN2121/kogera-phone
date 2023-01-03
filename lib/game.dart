@@ -24,15 +24,15 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
+    name = 'name';
+    roomId = 'room1';
 
-    _socket = io(
-        "http://dev.kun.pink:3000",
-        OptionBuilder()
-            .setTransports(['websocket'])
-            .disableAutoConnect()
-            .build());
-    _socket.onConnect((data) {
-      print('Connection established');
+    _connectSocket() {
+      _socket.onConnect((data) => print('Connection established'));
+      _socket.onConnectError((data) => print('Connect Error: $data'));
+      _socket.onDisconnect((data) => print('Socket.IO server disconnected'));
+
+      _joinGroup(roomId);
 
       /// 受け取り処理　///
 
@@ -87,24 +87,33 @@ class _GamePageState extends State<GamePage> {
           default:
         }
       });
-    });
-    _socket.connect();
-    // _socket.onDisconnect((_) => print('Connection Disconnection'));
-    // _socket.onConnectError((err) => print(err));
-    // _socket.onError((err) => print(err));
+    }
 
-    // Futureの中ではcontextにアクセスできるらしい。
-    Future.delayed(Duration.zero, () {
-      if (!mounted) {
-        print('thismount');
-        return;
-      }
-      joinRoomModel args =
-          ModalRoute.of(context)!.settings.arguments as joinRoomModel;
-      name = args.name;
-      roomId = args.roomid;
-      _joinGroup(roomId);
-    });
+    // _socket = io(
+    //   "http://dev.kun.pink:3000",
+    //   OptionBuilder().setTransports(['websocket']).disableAutoConnect().build(),
+    // );
+    _socket = io(
+      "http://dev.kun.pink:3000",
+      OptionBuilder()
+          .setTransports(['websocket'])
+          .enableForceNew()
+          .disableAutoConnect()
+          .build(),
+    );
+    _connectSocket();
+    _socket.connect();
+    // Future.delayed(Duration.zero, () {
+    //   if (!mounted) {
+    //     print('thismount');
+    //     return;
+    //   }
+    //   joinRoomModel args =
+    //       ModalRoute.of(context)!.settings.arguments as joinRoomModel;
+    //   name = args.name;
+    //   roomId = args.roomid;
+    //   _joinGroup(roomId);
+    // });
   }
 
   @override
