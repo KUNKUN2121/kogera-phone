@@ -13,15 +13,18 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-String name = '';
-String roomId = '';
-
 class _GamePageState extends State<GamePage> {
   var myCard = '';
+
+  String name = '';
+  String roomId = '';
+  int roomPlayers = 0;
   late final Socket _socket;
 
   @override
   void initState() {
+    super.initState();
+
     _socket = io(
         "http://dev.kun.pink:3000",
         OptionBuilder()
@@ -30,6 +33,21 @@ class _GamePageState extends State<GamePage> {
             .build());
     _socket.onConnect((data) {
       print('Connection established');
+
+      /// 受け取り処理　///
+
+      // JoinLog 受け取り
+      _socket.on("joinLog", (data) {
+        print('JoinLog' + data['value']);
+      });
+
+      // groupSetting 設定情報取得
+      _socket.on("groupSetting", (data) {
+        roomPlayers = data['roomPlayers'];
+        print('groupSetting');
+        // data['life'];
+        // setState(() {});
+      });
 
       // token受け取り
       _socket.on("token", (data) {
@@ -63,34 +81,39 @@ class _GamePageState extends State<GamePage> {
         switch (data['id']) {
           case 'noCard':
             myCard = 'やり直し';
+            // カードがないのでシャッフルし直します
             setState(() {});
             break;
           default:
         }
       });
-
-      // JoinLog 受け取り
-      _socket.on("joinLog", (data) {
-        print('JoinLog' + data['value']);
-      });
     });
     _socket.connect();
-    _socket.onDisconnect((_) => print('Connection Disconnection'));
-    _socket.onConnectError((err) => print(err));
-    _socket.onError((err) => print(err));
+    // _socket.onDisconnect((_) => print('Connection Disconnection'));
+    // _socket.onConnectError((err) => print(err));
+    // _socket.onError((err) => print(err));
 
     // Futureの中ではcontextにアクセスできるらしい。
     Future.delayed(Duration.zero, () {
-      setState(() {
-        joinRoomModel args =
-            ModalRoute.of(context)!.settings.arguments as joinRoomModel;
-        name = args.name;
-        roomId = args.roomid;
-        _JoinGroup(roomId);
-      });
+      if (!mounted) {
+        print('thismount');
+        return;
+      }
+      joinRoomModel args =
+          ModalRoute.of(context)!.settings.arguments as joinRoomModel;
+      name = args.name;
+      roomId = args.roomid;
+      _joinGroup(roomId);
     });
+  }
 
-    super.initState();
+  @override
+  void dispose() {
+    // _socket.close();
+    _socket.disconnect();
+    _socket.close();
+    super.dispose();
+    print('clear');
   }
 
   @override
@@ -99,73 +122,95 @@ class _GamePageState extends State<GamePage> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Game')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('GameLobby'),
-            Container(
-              alignment: Alignment.center,
-              // width: 200,
-              height: 200,
-              child: Text(
-                myCard,
-                style: TextStyle(fontSize: 150),
-              ),
-            ),
-            ElevatedButton(
-              child: Text('次へ'),
-              onPressed: () {
-                _sendMessage();
-              },
-            ),
-            ElevatedButton(
-              child: Text(
-                'こげら！！！',
-                style: TextStyle(fontSize: 30),
-              ),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) {
-                    return AlertDialog(
-                      title: Text("本当にこげらしますか"),
-                      actions: <Widget>[
-                        ElevatedButton(
-                            child: Text("はい"),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            }),
-                        ElevatedButton(
-                            child: Text("いいえ"),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            }),
-                      ],
+      body: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '現在の参加者 ' + roomPlayers.toString() + '名',
+                  style: TextStyle(fontSize: 25),
+                ),
+                ElevatedButton(
+                  child: Text('ゲームを開始する。'),
+                  onPressed: () {},
+                ),
+
+                /// この↓ゲーム開始するまで非表示にする。
+                Container(
+                  alignment: Alignment.center,
+                  // width: 200,
+                  height: 200,
+                  child: Text(
+                    myCard,
+                    style: TextStyle(fontSize: 150),
+                  ),
+                ),
+                ElevatedButton(
+                  child: Text('次へ'),
+                  onPressed: () {
+                    _gameStartPost();
+                  },
+                ),
+                ElevatedButton(
+                  child: Text(
+                    'こげら！！！',
+                    style: TextStyle(fontSize: 30),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) {
+                        return AlertDialog(
+                          title: Text("本当にこげらしますか"),
+                          actions: <Widget>[
+                            ElevatedButton(
+                                child: Text("はい"),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  _gameStartPost();
+                                }),
+                            ElevatedButton(
+                                child: Text("いいえ"),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                }),
+                          ],
+                        );
+                      },
                     );
                   },
-                );
-              },
+                ),
+                Container(
+                  child: Column(children: [
+                    Text('ライフ'),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.favorite),
+                      Icon(Icons.favorite),
+                      Icon(Icons.favorite),
+                      Icon(Icons.favorite),
+                    ]),
+                  ]),
+                )
+              ],
             ),
-            ElevatedButton(
-              child: Text('Join'),
-              onPressed: () {
-                _JoinGroup('room1');
-              },
-            )
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  void _sendMessage() {
-    print(roomId + 'goStart');
-    _socket.emit("test_post", {"roomId": 'room1'});
-  }
-
-  void _JoinGroup(String roomId) {
+  void _joinGroup(String roomId) {
     print('次のグループに参加したよ' + roomId);
     _socket.emit("roomJoin", {"value": roomId});
+  }
+
+  void _gameStartPost() {
+    _socket.emit("gameStartPost", {"roomId": 'room1'});
+  }
+
+  void _sendKogera() {
+    _socket.emit("test_post", {"roomId": 'room1'});
   }
 }
