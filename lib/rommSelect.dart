@@ -24,7 +24,7 @@ Future<List> getData(String id) async {
       data = json.decode(result.body);
       int length = data.length;
       for (int i = 0; i < length; i++) {
-        print(data[i]["roomName"]);
+        // print(data[i]["roomName"]);
       }
     }
     return data;

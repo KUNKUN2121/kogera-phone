@@ -24,8 +24,6 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
-    name = 'name';
-    roomId = 'room1';
 
     _connectSocket() {
       _socket.onConnect((data) => print('Connection established'));
@@ -89,10 +87,6 @@ class _GamePageState extends State<GamePage> {
       });
     }
 
-    // _socket = io(
-    //   "http://dev.kun.pink:3000",
-    //   OptionBuilder().setTransports(['websocket']).disableAutoConnect().build(),
-    // );
     _socket = io(
       "http://dev.kun.pink:3000",
       OptionBuilder()
@@ -103,17 +97,17 @@ class _GamePageState extends State<GamePage> {
     );
     _connectSocket();
     _socket.connect();
-    // Future.delayed(Duration.zero, () {
-    //   if (!mounted) {
-    //     print('thismount');
-    //     return;
-    //   }
-    //   joinRoomModel args =
-    //       ModalRoute.of(context)!.settings.arguments as joinRoomModel;
-    //   name = args.name;
-    //   roomId = args.roomid;
-    //   _joinGroup(roomId);
-    // });
+    Future.delayed(Duration.zero, () {
+      if (!mounted) {
+        print('thismount');
+        return;
+      }
+      joinRoomModel args =
+          ModalRoute.of(context)!.settings.arguments as joinRoomModel;
+      name = args.name;
+      roomId = args.roomid;
+      _joinGroup(roomId);
+    });
   }
 
   @override
