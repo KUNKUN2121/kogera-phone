@@ -30,7 +30,7 @@ class _GamePageState extends State<GamePage> {
       _socket.onConnectError((data) => print('Connect Error: $data'));
       _socket.onDisconnect((data) => print('Socket.IO server disconnected'));
 
-      _joinGroup(roomId);
+      // _joinGroup(roomId);
 
       /// 受け取り処理　///
 
@@ -42,15 +42,12 @@ class _GamePageState extends State<GamePage> {
       // groupSetting 設定情報取得
       _socket.on("groupSetting", (data) {
         roomPlayers = data['roomPlayers'];
-        print('groupSetting');
+        setState(() {});
+        // print(data['roomPlayers']);
         // data['life'];
         // setState(() {});
       });
 
-      // token受け取り
-      _socket.on("token", (data) {
-        // emitData = EmitData.fromJson(data);
-      });
       // 個人配信
       _socket.on("client", (data) {
         print('clientOnly 受信 ID : ' + data['id']);
@@ -78,9 +75,7 @@ class _GamePageState extends State<GamePage> {
         print('group 受信 ID : ' + data['id']);
         switch (data['id']) {
           case 'noCard':
-            myCard = 'やり直し';
-            // カードがないのでシャッフルし直します
-            setState(() {});
+            noCardDialog();
             break;
           default:
         }
@@ -172,7 +167,12 @@ class _GamePageState extends State<GamePage> {
                                 child: Text("はい"),
                                 onPressed: () {
                                   Navigator.pop(context);
-                                  _gameStartPost();
+                                  // Navigator.push(
+                                  //     context,
+                                  //     MaterialPageRoute(
+                                  //         builder: (context) => KogeraPage()));
+                                  kogeraPost();
+                                  // _gameStartPost();
                                 }),
                             ElevatedButton(
                                 child: Text("いいえ"),
@@ -215,5 +215,93 @@ class _GamePageState extends State<GamePage> {
 
   void _sendKogera() {
     _socket.emit("test_post", {"roomId": 'room1'});
+  }
+
+  // カードがなくなった。
+  void noCardDialog() {
+    setState(() {
+      myCard = 'カードが無いためリセットします';
+    });
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: Text("カードが足りなくなりました。 \n カードをリセットします。 "),
+          actions: <Widget>[
+            ElevatedButton(
+                child: Text("はい"),
+                onPressed: () {
+                  Navigator.pop(context);
+                }),
+          ],
+        );
+      },
+    );
+  }
+
+  void kogeraPost() {
+    // 画面以降
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => KogeraPage()));
+  }
+}
+
+class KogeraPage extends StatefulWidget {
+  const KogeraPage({super.key});
+
+  @override
+  State<KogeraPage> createState() => _KogeraPageState();
+}
+
+class _KogeraPageState extends State<KogeraPage> {
+  bool isEnterNum = false;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Stack(children: [
+        Center(
+            child: Column(
+          children: [
+            if (!isEnterNum)
+              Column(
+                children: [
+                  Text('最後に言った数字を入力してください'),
+                  TextField(),
+                  ElevatedButton(
+                      onPressed: () {
+                        isEnterNum = true;
+                        setState(() {});
+                      },
+                      child: Text('続行')),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  Text('data'),
+                  Text('それよりも大きい？'),
+                  Text('自分のカード'),
+                  Text('4'),
+                  Text('全体のカード合計'),
+                  Text('25'),
+                  ElevatedButton(
+                    child: Text('多きい 勝ち'),
+                    onPressed: () {
+                      // 相手のライフを減らす処理
+                    },
+                  ),
+                  ElevatedButton(
+                    child: Text('小さい 負け '),
+                    onPressed: () {
+                      // 自分のライフを減らす処理
+                    },
+                  )
+                ],
+              )
+          ],
+        ))
+      ]),
+    );
   }
 }
