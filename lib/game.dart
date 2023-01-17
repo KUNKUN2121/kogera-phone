@@ -13,12 +13,16 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
-  var myCard = '';
+var myCard = '';
 
-  String name = '';
-  String roomId = '';
-  int roomPlayers = 0;
+String name = '';
+String roomId = '';
+int roomPlayers = 0;
+double goukei = -100;
+bool isYouKogera = false;
+bool error = false;
+
+class _GamePageState extends State<GamePage> {
   late final Socket _socket;
 
   @override
@@ -26,8 +30,13 @@ class _GamePageState extends State<GamePage> {
     super.initState();
 
     _connectSocket() {
-      _socket.onConnect((data) => print('Connection established'));
-      _socket.onConnectError((data) => print('Connect Error: $data'));
+      _socket.onConnect((data) {
+        error = false;
+      });
+      _socket.onConnectError((data) {
+        print('Connect Error: $data');
+        socketerror();
+      });
       _socket.onDisconnect((data) => print('Socket.IO server disconnected'));
 
       // _joinGroup(roomId);
@@ -80,6 +89,17 @@ class _GamePageState extends State<GamePage> {
           default:
         }
       });
+      // 合計値取得
+      _socket.on("groupGoukei", (data) {
+        goukei = data['value'].toDouble();
+      });
+      // kogeraWait
+      _socket.on("kogeraWait", (data) {
+        if (isYouKogera == true) {
+          return;
+        }
+        kogeraWait();
+      });
     }
 
     _socket = io(
@@ -122,82 +142,88 @@ class _GamePageState extends State<GamePage> {
       appBar: AppBar(title: Text('Game')),
       body: Stack(
         children: [
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '現在の参加者 ' + roomPlayers.toString() + '名',
-                  style: TextStyle(fontSize: 25),
-                ),
-                ElevatedButton(
-                  child: Text('ゲームを開始する。'),
-                  onPressed: () {},
-                ),
+          Column(
+            // mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('(ユーザ)さん'),
+              Text(
+                '現在の参加者 ' + roomPlayers.toString() + '名',
+                style: TextStyle(fontSize: 15),
+              ),
+              ElevatedButton(
+                child: Text('ゲームを開始する。'),
+                onPressed: () {},
+              ),
 
-                /// この↓ゲーム開始するまで非表示にする。
-                Container(
-                  alignment: Alignment.center,
-                  // width: 200,
-                  height: 200,
-                  child: Text(
-                    myCard,
-                    style: TextStyle(fontSize: 150),
-                  ),
+              /// この↓ゲーム開始するまで非表示にする。
+              Container(
+                alignment: Alignment.center,
+                // width: 200,
+                height: 200,
+                child: Text(
+                  myCard,
+                  style: TextStyle(fontSize: 150),
                 ),
-                ElevatedButton(
-                  child: Text('次へ'),
-                  onPressed: () {
-                    _gameStartPost();
-                  },
+              ),
+              ElevatedButton(
+                child: Text('次へ'),
+                onPressed: () {
+                  _gameStartPost();
+                },
+              ),
+              ElevatedButton(
+                child: Text('合計'),
+                onPressed: () {
+                  print(goukei);
+                },
+              ),
+              ElevatedButton(
+                child: Text(
+                  'こげら！！！',
+                  style: TextStyle(fontSize: 30),
                 ),
-                ElevatedButton(
-                  child: Text(
-                    'こげら！！！',
-                    style: TextStyle(fontSize: 30),
-                  ),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) {
-                        return AlertDialog(
-                          title: Text("本当にこげらしますか"),
-                          actions: <Widget>[
-                            ElevatedButton(
-                                child: Text("はい"),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  // Navigator.push(
-                                  //     context,
-                                  //     MaterialPageRoute(
-                                  //         builder: (context) => KogeraPage()));
-                                  kogeraPost();
-                                  // _gameStartPost();
-                                }),
-                            ElevatedButton(
-                                child: Text("いいえ"),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                }),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
-                Container(
-                  child: Column(children: [
-                    Text('ライフ'),
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.favorite),
-                      Icon(Icons.favorite),
-                      Icon(Icons.favorite),
-                      Icon(Icons.favorite),
-                    ]),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) {
+                      return AlertDialog(
+                        title: Text("本当にこげらしますか"),
+                        actions: <Widget>[
+                          ElevatedButton(
+                              child: Text("はい"),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                isYouKogera = true;
+                                // Navigator.push(
+                                //     context,
+                                //     MaterialPageRoute(
+                                //         builder: (context) => KogeraPage()));
+                                kogeraPost();
+                                // _gameStartPost();
+                              }),
+                          ElevatedButton(
+                              child: Text("いいえ"),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              }),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+              Container(
+                child: Column(children: [
+                  Text('ライフ'),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.favorite),
+                    Icon(Icons.favorite),
+                    Icon(Icons.favorite),
+                    Icon(Icons.favorite),
                   ]),
-                )
-              ],
-            ),
+                ]),
+              )
+            ],
           ),
         ],
       ),
@@ -209,12 +235,44 @@ class _GamePageState extends State<GamePage> {
     _socket.emit("roomJoin", {"value": roomId});
   }
 
-  void _gameStartPost() {
+  void _gameStartPost() async {
+    setState(() {
+      myCard = '開始';
+    });
+    await Future.delayed(Duration(seconds: 3));
     _socket.emit("gameStartPost", {"roomId": 'room1'});
   }
 
   void _sendKogera() {
     _socket.emit("test_post", {"roomId": 'room1'});
+  }
+
+  void _sendKogeraWait() {
+    _socket.emit("kogeraWait", {"roomId": 'room1'});
+  }
+
+  void socketerror() {
+    if (error != true) {
+      error = true;
+      showDialog(
+        context: context,
+        builder: (_) {
+          return AlertDialog(
+            title: Text("エラー"),
+            content: Text("サーバーに接続できません。再続行しています。\n Wi-Fi モバイル通信を確認してください。"),
+            actions: <Widget>[
+              ElevatedButton(
+                  child: Text("戻る"),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    error = false;
+                  }),
+            ],
+          );
+        },
+      );
+    }
   }
 
   // カードがなくなった。
@@ -240,9 +298,16 @@ class _GamePageState extends State<GamePage> {
   }
 
   void kogeraPost() {
+    _sendKogeraWait();
     // 画面以降
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => KogeraPage()));
+  }
+
+  void kogeraWait() {
+    // 画面以降
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => KogeraWait()));
   }
 }
 
@@ -254,7 +319,9 @@ class KogeraPage extends StatefulWidget {
 }
 
 class _KogeraPageState extends State<KogeraPage> {
+  final _enterSayNum = TextEditingController();
   bool isEnterNum = false;
+  bool win = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -264,44 +331,97 @@ class _KogeraPageState extends State<KogeraPage> {
             child: Column(
           children: [
             if (!isEnterNum)
+              inputNumber(title: 'aaa')
+            else if (win = true)
               Column(
-                children: [
-                  Text('最後に言った数字を入力してください'),
-                  TextField(),
-                  ElevatedButton(
-                      onPressed: () {
-                        isEnterNum = true;
-                        setState(() {});
-                      },
-                      child: Text('続行')),
-                ],
+                children: [Text('勝ち')],
               )
             else
               Column(
-                children: [
-                  Text('data'),
-                  Text('それよりも大きい？'),
-                  Text('自分のカード'),
-                  Text('4'),
-                  Text('全体のカード合計'),
-                  Text('25'),
-                  ElevatedButton(
-                    child: Text('多きい 勝ち'),
-                    onPressed: () {
-                      // 相手のライフを減らす処理
-                    },
-                  ),
-                  ElevatedButton(
-                    child: Text('小さい 負け '),
-                    onPressed: () {
-                      // 自分のライフを減らす処理
-                    },
-                  )
-                ],
+                children: [Text('負け')],
               )
           ],
         ))
       ]),
+    );
+  }
+
+  Widget inputNumber({
+    required String title,
+    // required String description,
+    // required IconData icon,
+    // required Key key,
+    // required Function()? onPressed,
+  }) {
+    return Center(
+      child: Column(children: [
+        Text('最後に言った数字を入力してください'),
+        TextField(
+          controller: _enterSayNum,
+        ),
+        ElevatedButton(
+            onPressed: () {
+              isEnterNum = true;
+              if (goukei > double.parse(_enterSayNum.text)) {
+                print('負け');
+              } else {
+                // 合計が 入力した値よりも小さい
+                print('勝ち');
+                win = true;
+              }
+              setState(() {});
+            },
+            child: Text('続行'))
+      ]),
+    );
+  }
+}
+
+class KogeraWait extends StatefulWidget {
+  const KogeraWait({super.key});
+
+  @override
+  State<KogeraWait> createState() => _KogeraWaitState();
+}
+
+class _KogeraWaitState extends State<KogeraWait> {
+  bool isEnterNum = false;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Column(children: [
+            Text(
+              '待機中',
+              style: TextStyle(fontSize: 30),
+            ),
+            Text(
+              'ユーザID : 1',
+              style: TextStyle(fontSize: 30),
+            ),
+          ]),
+        ));
+  }
+}
+
+class Result extends StatefulWidget {
+  const Result({super.key});
+
+  @override
+  State<Result> createState() => _ResultState();
+}
+
+class _ResultState extends State<Result> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Result'),
+      ),
+      body: Center(
+        child: Column(children: [Text('Result')]),
+      ),
     );
   }
 }
