@@ -21,6 +21,7 @@ int roomPlayers = 0;
 double goukei = -100;
 bool isYouKogera = false;
 bool error = false;
+String myid = '';
 
 class _GamePageState extends State<GamePage> {
   late final Socket _socket;
@@ -47,6 +48,10 @@ class _GamePageState extends State<GamePage> {
       _socket.on("joinLog", (data) {
         print('JoinLog' + data['value']);
       });
+      _socket.on("youId", (data) {
+        myid = data['id'];
+        print(myid);
+      });
 
       // groupSetting 設定情報取得
       _socket.on("groupSetting", (data) {
@@ -70,6 +75,29 @@ class _GamePageState extends State<GamePage> {
       });
 
       // グループ配信
+      _socket.on("groupAll", (data) {
+        // print('client 受信 ID : ' + data['id']);
+        print(data['goukei']);
+        print(data['userList']);
+        for (int i = 0; i < data['userList'].length; i++) {
+          print('1');
+          if (data['userList'][i][0] == myid) {
+            myCard = data['userList'][i][3];
+            print('これにしたよ' + myCard);
+          }
+        }
+        setState(() {});
+      });
+      // _socket.on("client", (data) {
+      //   print('client 受信 ID : ' + data['id']);
+      //   switch (data['id']) {
+      //     case 'card':
+      //       myCard = data['value'];
+      //       setState(() {});
+      //       break;
+      //     default:
+      //   }
+      // });
       _socket.on("client", (data) {
         print('client 受信 ID : ' + data['id']);
         switch (data['id']) {
@@ -90,9 +118,15 @@ class _GamePageState extends State<GamePage> {
         }
       });
       // 合計値取得
-      _socket.on("groupGoukei", (data) {
-        goukei = data['value'].toDouble();
+      // _socket.on("groupGoukei", (data) {
+      // goukei = data['value'].toDouble();
+      // });
+
+      _socket.on("groupAll", (data) {
+        goukei = data['goukei'].toDouble();
+        setState(() {});
       });
+
       // kogeraWait
       _socket.on("kogeraWait", (data) {
         if (isYouKogera == true) {
@@ -165,6 +199,7 @@ class _GamePageState extends State<GamePage> {
                   style: TextStyle(fontSize: 150),
                 ),
               ),
+              Text(goukei.toString()),
               ElevatedButton(
                 child: Text('次へ'),
                 onPressed: () {
@@ -232,7 +267,7 @@ class _GamePageState extends State<GamePage> {
 
   void _joinGroup(String roomId) {
     print('次のグループに参加したよ' + roomId);
-    _socket.emit("roomJoin", {"value": roomId});
+    _socket.emit("roomJoin", {"roomId": roomId, "usrName": 'うんち'});
   }
 
   void _gameStartPost() async {
@@ -240,7 +275,7 @@ class _GamePageState extends State<GamePage> {
       myCard = '開始';
     });
     await Future.delayed(Duration(seconds: 3));
-    _socket.emit("gameStartPost", {"roomId": 'room1'});
+    _socket.emit("gamestart", {"roomId": 'room1'});
   }
 
   void _sendKogera() {
@@ -248,7 +283,7 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _sendKogeraWait() {
-    _socket.emit("kogeraWait", {"roomId": 'room1'});
+    _socket.emit("kogeraPost", {"roomId": 'room1'});
   }
 
   void socketerror() {
