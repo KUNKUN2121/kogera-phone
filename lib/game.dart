@@ -22,6 +22,9 @@ double goukei = -100;
 bool isYouKogera = false;
 bool error = false;
 String myid = '';
+String kogeraSayUserName = '';
+var userList;
+List<String> selectList = ["選択肢１", "選択肢2"];
 
 class _GamePageState extends State<GamePage> {
   late final Socket _socket;
@@ -76,14 +79,13 @@ class _GamePageState extends State<GamePage> {
 
       // グループ配信
       _socket.on("groupAll", (data) {
+        userList = data['userList'];
         // print('client 受信 ID : ' + data['id']);
         print(data['goukei']);
-        print(data['userList']);
-        for (int i = 0; i < data['userList'].length; i++) {
-          print('1');
-          if (data['userList'][i][0] == myid) {
+        print(userList);
+        for (int i = 0; i < userList.length; i++) {
+          if (userList[i][0] == myid) {
             myCard = data['userList'][i][3];
-            print('これにしたよ' + myCard);
           }
         }
         setState(() {});
@@ -128,10 +130,19 @@ class _GamePageState extends State<GamePage> {
       });
 
       // kogeraWait
-      _socket.on("kogeraWait", (data) {
-        if (isYouKogera == true) {
+      _socket.on("kogeraPost", (data) async {
+        if (myid == data['sayKogeraUser']) {
           return;
         }
+        for (int i = 0; i < userList.length; i++) {
+          print(i);
+          print(userList[i][0]);
+
+          if (userList[i][0] == data['sayKogeraUser']) {
+            kogeraSayUserName = userList[i][1];
+          }
+        }
+        print(data['sayKogeraUser']);
         kogeraWait();
       });
     }
@@ -209,7 +220,11 @@ class _GamePageState extends State<GamePage> {
               ElevatedButton(
                 child: Text('合計'),
                 onPressed: () {
-                  print(goukei);
+                  var testListDa = userList.map((str) => str[1]).toList();
+                  var testListDa2 = selectList.map((str) => str).toList();
+                  print(testListDa);
+                  print('^^^^^^^^^^^^^');
+                  print(testListDa2);
                 },
               ),
               ElevatedButton(
@@ -267,19 +282,15 @@ class _GamePageState extends State<GamePage> {
 
   void _joinGroup(String roomId) {
     print('次のグループに参加したよ' + roomId);
-    _socket.emit("roomJoin", {"roomId": roomId, "usrName": 'うんち'});
+    _socket.emit("roomJoin", {"roomId": roomId, "usrName": 'Kasoooo'});
   }
 
   void _gameStartPost() async {
     setState(() {
       myCard = '開始';
     });
-    await Future.delayed(Duration(seconds: 3));
+    await Future.delayed(Duration(seconds: 1));
     _socket.emit("gamestart", {"roomId": 'room1'});
-  }
-
-  void _sendKogera() {
-    _socket.emit("test_post", {"roomId": 'room1'});
   }
 
   void _sendKogeraWait() {
@@ -357,6 +368,19 @@ class _KogeraPageState extends State<KogeraPage> {
   final _enterSayNum = TextEditingController();
   bool isEnterNum = false;
   bool win = false;
+  var isSelectedItem = userList[0][0];
+  List<DropdownMenuItem<Object>> testListDa = userList
+      .map(
+        (str) => DropdownMenuItem(
+          child: Text((str[1])),
+          value: str[0],
+        ),
+      )
+      // castでデータ型をあわせる。
+      .cast<DropdownMenuItem<Object>>()
+      .toList();
+  List testListDa2 = selectList.map((str) => str).toList();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -394,6 +418,18 @@ class _KogeraPageState extends State<KogeraPage> {
         TextField(
           controller: _enterSayNum,
         ),
+        DropdownButton(
+            hint: Text("選択してください"),
+            items: testListDa,
+            value: isSelectedItem,
+            onChanged: (value) {
+              print(value);
+              isSelectedItem = value;
+              setState(() {});
+            }),
+
+        /// ビルダー
+        ///    作ったウゾ
         ElevatedButton(
             onPressed: () {
               isEnterNum = true;
@@ -431,6 +467,7 @@ class _KogeraWaitState extends State<KogeraWait> {
               '待機中',
               style: TextStyle(fontSize: 30),
             ),
+            Text(kogeraSayUserName + ' さんがこげらしました！'),
             Text(
               'ユーザID : 1',
               style: TextStyle(fontSize: 30),
