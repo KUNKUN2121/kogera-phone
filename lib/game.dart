@@ -446,6 +446,10 @@ class _KogeraPageState extends State<KogeraPage> {
         ///    作ったウゾ
         ElevatedButton(
             onPressed: () async {
+              if (_enterSayNum.text == '') {
+                // 未入力の場合returnする。
+                return;
+              }
               // Win Loseはクライントが判断する。
               if (goukei > double.parse(_enterSayNum.text)) {
                 // print('負け');
