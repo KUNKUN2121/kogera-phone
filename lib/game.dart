@@ -13,10 +13,11 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-var myCard = '';
-
+late final Socket _socket;
 String name = '';
 String roomId = '';
+var myCard = '';
+
 int roomPlayers = 0;
 double goukei = -100;
 bool isYouKogera = false;
@@ -24,11 +25,10 @@ bool error = false;
 String myid = '';
 String kogeraSayUserName = '';
 var userList;
+var kogeraResultData;
 List<String> selectList = ["選択肢１", "選択肢2"];
 
 class _GamePageState extends State<GamePage> {
-  late final Socket _socket;
-
   @override
   void initState() {
     super.initState();
@@ -144,6 +144,14 @@ class _GamePageState extends State<GamePage> {
         }
         print(data['sayKogeraUser']);
         kogeraWait();
+      });
+
+      // 結果！！！！！！！
+      _socket.on("kogeraResultPost", (data) {
+        kogeraResultData = data;
+        print(data['kogeraSayUser']);
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => KogeraResultPage()));
       });
     }
 
@@ -282,7 +290,7 @@ class _GamePageState extends State<GamePage> {
 
   void _joinGroup(String roomId) {
     print('次のグループに参加したよ' + roomId);
-    _socket.emit("roomJoin", {"roomId": roomId, "usrName": 'Kasoooo'});
+    _socket.emit("roomJoin", {"roomId": roomId, "usrName": 'kasou'});
   }
 
   void _gameStartPost() async {
@@ -355,6 +363,8 @@ class _GamePageState extends State<GamePage> {
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => KogeraWait()));
   }
+
+// 結果処理！！！！
 }
 
 class KogeraPage extends StatefulWidget {
@@ -368,7 +378,7 @@ class _KogeraPageState extends State<KogeraPage> {
   final _enterSayNum = TextEditingController();
   bool isEnterNum = false;
   bool win = false;
-  var isSelectedItem = userList[0][0];
+  var kogeraPreSayUserId = userList[0][0];
   List<DropdownMenuItem<Object>> testListDa = userList
       .map(
         (str) => DropdownMenuItem(
@@ -421,26 +431,45 @@ class _KogeraPageState extends State<KogeraPage> {
         DropdownButton(
             hint: Text("選択してください"),
             items: testListDa,
-            value: isSelectedItem,
+            value: kogeraPreSayUserId,
             onChanged: (value) {
               print(value);
-              isSelectedItem = value;
+              kogeraPreSayUserId = value;
               setState(() {});
             }),
 
         /// ビルダー
         ///    作ったウゾ
         ElevatedButton(
-            onPressed: () {
-              isEnterNum = true;
+            onPressed: () async {
+              // Win Loseはクライントが判断する。
               if (goukei > double.parse(_enterSayNum.text)) {
-                print('負け');
+                // print('負け');
+                win = false;
               } else {
                 // 合計が 入力した値よりも小さい
-                print('勝ち');
+                // print('勝ち');
                 win = true;
               }
-              setState(() {});
+
+              _socket.emit("kogeraResultPost", {
+                "roomId": 'room1',
+                "goukei": goukei,
+                // こげらしたユーザID
+                "kogeraSayUser": myid,
+                // こげら言った人の勝敗
+                "win": true,
+                // こげらの前の人のユーザID
+                "kogeraPreSayUserId": kogeraPreSayUserId,
+                "kogeraPreSayNumber": _enterSayNum.text,
+              });
+              // 画面以降
+              // Navigator.push(context,
+              //     MaterialPageRoute(builder: (context) => KogeraResultPage()));
+
+              isEnterNum = true;
+
+              // setState(() {});
             },
             child: Text('続行'))
       ]),
@@ -448,6 +477,7 @@ class _KogeraPageState extends State<KogeraPage> {
   }
 }
 
+// 待機ページ
 class KogeraWait extends StatefulWidget {
   const KogeraWait({super.key});
 
@@ -477,23 +507,55 @@ class _KogeraWaitState extends State<KogeraWait> {
   }
 }
 
-class Result extends StatefulWidget {
-  const Result({super.key});
+class KogeraResultPage extends StatelessWidget {
+  const KogeraResultPage({super.key});
 
-  @override
-  State<Result> createState() => _ResultState();
-}
-
-class _ResultState extends State<Result> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Result'),
-      ),
-      body: Center(
-        child: Column(children: [Text('Result')]),
-      ),
+      appBar: AppBar(title: Text('結果')),
+      body: SafeArea(
+          child: Column(
+        children: [
+          Text('Winneeeeerrrr IS ' + kogeraResultData['winUserId']),
+          Text('LOSE IS ' + kogeraResultData['loseUserId']),
+          Text(serachUserName(kogeraResultData['winUserId']))
+        ],
+      )),
     );
   }
 }
+
+serachUserName(userId) {
+  for (int i = 0; i < userList.length; i++) {
+    print(i);
+    print(userList[i][0]);
+
+    if (userList[i][0] == userId) {
+      return userList[i][1];
+    }
+  }
+}
+
+
+// class Result extends StatefulWidget {
+//   const Result({super.key});
+
+//   @override
+//   State<Result> createState() => _ResultState();
+// }
+
+// class _ResultState extends State<Result> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Result'),
+//       ),
+//       body: Center(
+//         child: Column(children: [Text('Result')]),
+//       ),
+//     );
+//   }
+// }
+
