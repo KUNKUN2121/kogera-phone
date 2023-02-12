@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
 
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
       routes: {
-        "/gamepage": (BuildContext context) => GamePage(),
+        "/GamePage": (BuildContext context) => GamePage(),
       },
     );
   }

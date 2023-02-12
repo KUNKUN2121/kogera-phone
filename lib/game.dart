@@ -6,13 +6,6 @@ import 'package:socket_io_client/socket_io_client.dart';
 import 'joinRoom.dart';
 import 'dialog.dart';
 
-class GamePage extends StatefulWidget {
-  const GamePage({super.key});
-
-  @override
-  State<GamePage> createState() => _GamePageState();
-}
-
 late final Socket _socket;
 String name = '';
 String roomId = '';
@@ -26,7 +19,13 @@ String myid = '';
 String kogeraSayUserName = '';
 var userList;
 var kogeraResultData;
-List<String> selectList = ["選択肢１", "選択肢2"];
+
+class GamePage extends StatefulWidget {
+  const GamePage({super.key});
+
+  @override
+  State<GamePage> createState() => _GamePageState();
+}
 
 class _GamePageState extends State<GamePage> {
   @override
@@ -227,13 +226,7 @@ class _GamePageState extends State<GamePage> {
               ),
               ElevatedButton(
                 child: Text('合計'),
-                onPressed: () {
-                  var testListDa = userList.map((str) => str[1]).toList();
-                  var testListDa2 = selectList.map((str) => str).toList();
-                  print(testListDa);
-                  print('^^^^^^^^^^^^^');
-                  print(testListDa2);
-                },
+                onPressed: () {},
               ),
               ElevatedButton(
                 child: Text(
@@ -355,13 +348,19 @@ class _GamePageState extends State<GamePage> {
     _sendKogeraWait();
     // 画面以降
     Navigator.push(
-        context, MaterialPageRoute(builder: (context) => KogeraPage()));
+            context, MaterialPageRoute(builder: (context) => KogeraPage()))
+        .then((value) {
+      setState(() {});
+    });
   }
 
   void kogeraWait() {
     // 画面以降
     Navigator.push(
-        context, MaterialPageRoute(builder: (context) => KogeraWait()));
+            context, MaterialPageRoute(builder: (context) => KogeraWait()))
+        .then((value) {
+      setState(() {});
+    });
   }
 
 // 結果処理！！！！
@@ -389,7 +388,6 @@ class _KogeraPageState extends State<KogeraPage> {
       // castでデータ型をあわせる。
       .cast<DropdownMenuItem<Object>>()
       .toList();
-  List testListDa2 = selectList.map((str) => str).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -519,7 +517,13 @@ class KogeraResultPage extends StatelessWidget {
         children: [
           Text('Winneeeeerrrr IS ' + kogeraResultData['winUserId']),
           Text('LOSE IS ' + kogeraResultData['loseUserId']),
-          Text(serachUserName(kogeraResultData['winUserId']))
+          Text(serachUserName(kogeraResultData['winUserId'])),
+          ElevatedButton(
+              onPressed: () {
+                resetGame();
+                Navigator.popUntil(context, ModalRoute.withName('/GamePage'));
+              },
+              child: Text('戻る'))
         ],
       )),
     );
@@ -535,6 +539,15 @@ serachUserName(userId) {
       return userList[i][1];
     }
   }
+}
+
+void resetGame() {
+  myCard = '';
+  roomPlayers = 0;
+  goukei = -100;
+  isYouKogera = false;
+  error = false;
+  kogeraSayUserName = '';
 }
 
 

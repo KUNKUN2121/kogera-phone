@@ -167,7 +167,7 @@ class _GameLobbyState extends State<GameLobby> {
                                 // print(imgURL);
                                 await Navigator.of(context)
                                     .pushNamed(
-                                  "/gamepage",
+                                  "/GamePage",
                                   arguments: joinRoomModel(
                                     name: 'thisisname',
                                     roomid: roomId,
