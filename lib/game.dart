@@ -6,7 +6,6 @@ import 'package:socket_io_client/socket_io_client.dart';
 import 'joinRoom.dart';
 import 'dialog.dart';
 
-late final Socket _socket;
 String name = '';
 String roomId = '';
 var myCard = '';
@@ -28,6 +27,7 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> {
+  late final Socket _socket;
   @override
   void initState() {
     super.initState();
@@ -348,8 +348,11 @@ class _GamePageState extends State<GamePage> {
     _sendKogeraWait();
     // 画面以降
     Navigator.push(
-            context, MaterialPageRoute(builder: (context) => KogeraPage()))
-        .then((value) {
+        context,
+        MaterialPageRoute(
+            builder: (context) => KogeraPage(
+                  socket: _socket,
+                ))).then((value) {
       setState(() {});
     });
   }
@@ -367,13 +370,16 @@ class _GamePageState extends State<GamePage> {
 }
 
 class KogeraPage extends StatefulWidget {
-  const KogeraPage({super.key});
+  final Socket socket;
+  const KogeraPage({super.key, required this.socket});
 
   @override
-  State<KogeraPage> createState() => _KogeraPageState();
+  State<KogeraPage> createState() => _KogeraPageState(socket: socket);
 }
 
 class _KogeraPageState extends State<KogeraPage> {
+  final Socket socket;
+  _KogeraPageState({required this.socket});
   final _enterSayNum = TextEditingController();
   bool isEnterNum = false;
   bool win = false;
@@ -450,7 +456,7 @@ class _KogeraPageState extends State<KogeraPage> {
                 win = true;
               }
 
-              _socket.emit("kogeraResultPost", {
+              socket.emit("kogeraResultPost", {
                 "roomId": 'room1',
                 "goukei": goukei,
                 // こげらしたユーザID
