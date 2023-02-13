@@ -19,6 +19,7 @@ String myid = '';
 String kogeraSayUserName = '';
 var userList;
 var kogeraResultData;
+bool firstGame = false;
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -131,6 +132,7 @@ class _GamePageState extends State<GamePage> {
 
       // kogeraWait
       _socket.on("kogeraPost", (data) async {
+        firstGame = true;
         if (myid == data['sayKogeraUser']) {
           return;
         }
@@ -150,8 +152,14 @@ class _GamePageState extends State<GamePage> {
       _socket.on("kogeraResultPost", (data) {
         kogeraResultData = data;
         print(data['kogeraSayUser']);
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => KogeraResultPage()));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => KogeraResultPage(socket: _socket)));
+      });
+      _socket.on("gameEnd", (data) {
+        resetGame();
+        Navigator.popUntil(context, ModalRoute.withName('/GamePage'));
       });
     }
 
@@ -213,10 +221,11 @@ class _GamePageState extends State<GamePage> {
                 '現在の参加者 ' + roomPlayers.toString() + '名',
                 style: TextStyle(fontSize: 15),
               ),
-              ElevatedButton(
-                child: Text('ゲームを開始する。'),
-                onPressed: () {},
-              ),
+              if (firstGame)
+                ElevatedButton(
+                  child: Text('ゲームを開始する。'),
+                  onPressed: () {},
+                ),
 
               /// この↓ゲーム開始するまで非表示にする。
               Container(
@@ -527,7 +536,8 @@ class _KogeraWaitState extends State<KogeraWait> {
 }
 
 class KogeraResultPage extends StatelessWidget {
-  KogeraResultPage({super.key});
+  final Socket socket;
+  KogeraResultPage({super.key, required this.socket});
   Color backGroundColor = Colors.white;
   @override
   Widget build(BuildContext context) {
@@ -579,11 +589,11 @@ class KogeraResultPage extends StatelessWidget {
               style: TextStyle(fontSize: 20),
             ),
             ElevatedButton(
-                onPressed: () {
-                  resetGame();
-                  Navigator.popUntil(context, ModalRoute.withName('/GamePage'));
-                },
-                child: Text('戻る'))
+              onPressed: () {
+                socket.emit("gameEnd", {"roomId": roomId});
+              },
+              child: Text('戻る'),
+            )
           ],
         ),
       )),
