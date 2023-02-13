@@ -141,6 +141,7 @@ class _GamePageState extends State<GamePage> {
                 builder: (context) => KogeraResultPage(socket: _socket)));
       });
       _socket.on("gameEnd", (data) {
+        firstGame = true;
         resetGame();
         Navigator.popUntil(context, ModalRoute.withName('/GamePage'));
       });
@@ -188,6 +189,7 @@ class _GamePageState extends State<GamePage> {
         leading: IconButton(
           onPressed: () {
             resetGame();
+            firstGame = true;
             Navigator.pushNamedAndRemoveUntil(
                 context, "/MainPage", (r) => false);
           },
@@ -214,7 +216,9 @@ class _GamePageState extends State<GamePage> {
               if (firstGame)
                 ElevatedButton(
                   child: Text('ゲームを開始する。'),
-                  onPressed: () {},
+                  onPressed: () {
+                    _gameStartPost();
+                  },
                 ),
 
               /// この↓ゲーム開始するまで非表示にする。
@@ -410,26 +414,28 @@ class _KogeraPageState extends State<KogeraPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: Stack(children: [
-        Center(
+    // 戻れなくするためにわっぷ
+    return WillPopScope(
+      onWillPop: _willPopCallback,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('数値入力'),
+          // 戻るボタン非表示
+          automaticallyImplyLeading: false,
+        ),
+        body: Stack(children: [
+          Center(
             child: Column(
-          children: [
-            if (!isEnterNum)
-              inputNumber(title: 'aaa')
-            else if (win = true)
-              Column(
-                children: [Text('勝ち')],
-              )
-            else
-              Column(
-                children: [Text('負け')],
-              )
-          ],
-        ))
-      ]),
+              children: [inputNumber(title: 'aaa')],
+            ),
+          ),
+        ]),
+      ),
     );
+  }
+
+  Future<bool> _willPopCallback() async {
+    return true;
   }
 
   Widget inputNumber({
@@ -544,56 +550,63 @@ class KogeraResultPage extends StatelessWidget {
       backGroundColor = Color.fromRGBO(255, 148, 136, 1);
       print('a');
     }
-    return Scaffold(
-      appBar: AppBar(title: Text('結果')),
-      backgroundColor: backGroundColor,
-      body: SafeArea(
-          child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (win == null)
-              Text('aaa')
-            else if (win)
-              Text(
-                'WIN',
-                style: TextStyle(fontSize: 100),
-              )
-            else
-              Text(
-                'LOSE',
-                style: TextStyle(fontSize: 100),
+    return WillPopScope(
+      onWillPop: _willPopCallback,
+      child: Scaffold(
+        appBar: AppBar(automaticallyImplyLeading: false, title: Text('結果')),
+        backgroundColor: backGroundColor,
+        body: SafeArea(
+            child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (win == null)
+                Text('aaa')
+              else if (win)
+                Text(
+                  'WIN',
+                  style: TextStyle(fontSize: 100),
+                )
+              else
+                Text(
+                  'LOSE',
+                  style: TextStyle(fontSize: 100),
+                ),
+              Container(
+                child: Column(children: [
+                  Text(serachUserName(kogeraResultData['winUserId']) + ' WIN',
+                      style: TextStyle(fontSize: 20)),
+                  Text(serachUserName(kogeraResultData['loseUserId']) + ' LOSE',
+                      style: TextStyle(fontSize: 20)),
+                ]),
               ),
-            Container(
-              child: Column(children: [
-                Text(serachUserName(kogeraResultData['winUserId']) + ' WIN',
-                    style: TextStyle(fontSize: 20)),
-                Text(serachUserName(kogeraResultData['loseUserId']) + ' LOSE',
-                    style: TextStyle(fontSize: 20)),
-              ]),
-            ),
-            SizedBox(
-              height: 50,
-            ),
-            Text('合計は ' + goukei.toString() + ' でした。',
-                style: TextStyle(fontSize: 20)),
-            Text(
-              serachUserName(kogeraResultData['loseUserId']) +
-                  'さんが ' +
-                  kogeraResultData['kogeraPreSayNumber'] +
-                  'と言った',
-              style: TextStyle(fontSize: 20),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                socket.emit("gameEnd", {"roomId": roomId});
-              },
-              child: Text('戻る'),
-            )
-          ],
-        ),
-      )),
+              SizedBox(
+                height: 50,
+              ),
+              Text('合計は ' + goukei.toString() + ' でした。',
+                  style: TextStyle(fontSize: 20)),
+              Text(
+                serachUserName(kogeraResultData['loseUserId']) +
+                    'さんが ' +
+                    kogeraResultData['kogeraPreSayNumber'] +
+                    'と言った',
+                style: TextStyle(fontSize: 20),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  socket.emit("gameEnd", {"roomId": roomId});
+                },
+                child: Text('戻る'),
+              )
+            ],
+          ),
+        )),
+      ),
     );
+  }
+
+  Future<bool> _willPopCallback() async {
+    return true;
   }
 }
 
@@ -610,7 +623,7 @@ serachUserName(userId) {
 }
 
 void resetGame() {
-  firstGame = false;
+  firstGame = true;
   myCard = '';
   roomPlayers = 0;
   goukei = -100;
