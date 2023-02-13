@@ -245,41 +245,42 @@ class _GamePageState extends State<GamePage> {
               SizedBox(
                 height: 100,
               ),
-              ElevatedButton(
-                child: Text(
-                  'こげら！！！',
-                  style: TextStyle(fontSize: 30),
+              if (!firstGame)
+                ElevatedButton(
+                  child: Text(
+                    'こげら！！！',
+                    style: TextStyle(fontSize: 30),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) {
+                        return AlertDialog(
+                          title: Text("本当にこげらしますか"),
+                          actions: <Widget>[
+                            ElevatedButton(
+                                child: Text("はい"),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  isYouKogera = true;
+                                  // Navigator.push(
+                                  //     context,
+                                  //     MaterialPageRoute(
+                                  //         builder: (context) => KogeraPage()));
+                                  kogeraPost();
+                                  // _gameStartPost();
+                                }),
+                            ElevatedButton(
+                                child: Text("いいえ"),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                }),
+                          ],
+                        );
+                      },
+                    );
+                  },
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) {
-                      return AlertDialog(
-                        title: Text("本当にこげらしますか"),
-                        actions: <Widget>[
-                          ElevatedButton(
-                              child: Text("はい"),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                isYouKogera = true;
-                                // Navigator.push(
-                                //     context,
-                                //     MaterialPageRoute(
-                                //         builder: (context) => KogeraPage()));
-                                kogeraPost();
-                                // _gameStartPost();
-                              }),
-                          ElevatedButton(
-                              child: Text("いいえ"),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              }),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
               Container(
                 child: Column(children: [
                   Text('ライフ'),
@@ -470,12 +471,14 @@ class _KogeraPageState extends State<KogeraPage> {
                 return;
               }
               // Win Loseはクライントが判断する。
+              print('合計は ' + goukei.toString());
+              print('言ったのは ' + _enterSayNum.text.toString());
               if (goukei > double.parse(_enterSayNum.text)) {
-                // print('負け');
+                print('負け');
                 win = false;
               } else {
                 // 合計が 入力した値よりも小さい
-                // print('勝ち');
+                print('勝ち');
                 win = true;
               }
 
@@ -485,7 +488,7 @@ class _KogeraPageState extends State<KogeraPage> {
                 // こげらしたユーザID
                 "kogeraSayUser": myid,
                 // こげら言った人の勝敗
-                "win": true,
+                "win": win,
                 // こげらの前の人のユーザID
                 "kogeraPreSayUserId": kogeraPreSayUserId,
                 "kogeraPreSayNumber": _enterSayNum.text,
