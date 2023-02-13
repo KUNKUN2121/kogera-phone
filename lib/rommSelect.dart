@@ -248,7 +248,7 @@ class _GameJoinState extends State<GameJoin> {
                       setState(() {});
                     });
                   },
-                  child: Text('data'))
+                  child: Text('参加'))
             ],
           ),
         ));
