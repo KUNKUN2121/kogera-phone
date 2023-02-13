@@ -17,7 +17,7 @@ class GameLobby extends StatefulWidget {
 var data;
 Future<List> getData(String id) async {
   // カテゴリー
-  String apiURL = 'http://dev.kun.pink/kogera/roomtest.json';
+  String apiURL = 'https://kun.pink/kogera/roomtest.json';
   try {
     var result = await get(Uri.parse(apiURL));
     if (result.statusCode == 200) {
@@ -163,20 +163,26 @@ class _GameLobbyState extends State<GameLobby> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                              onPressed: () async {
-                                // print(imgURL);
-                                await Navigator.of(context)
-                                    .pushNamed(
-                                  "/GamePage",
-                                  arguments: joinRoomModel(
-                                    name: 'thisisname',
-                                    roomid: roomId,
-                                  ),
-                                )
-                                    .then((value) {
-                                  // 再描画
-                                  setState(() {});
-                                });
+                              // onPressed: () async {
+                              //   // print(imgURL);
+                              //   await Navigator.of(context)
+                              //       .pushNamed(
+                              //     "/GamePage",
+                              //     arguments: joinRoomModel(
+                              //       name: 'thisisname',
+                              //       roomid: roomId,
+                              //     ),
+                              //   )
+                              //       .then((value) {
+                              //     // 再描画
+                              //     setState(() {});
+                              //   });
+                              // },
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => GameJoin()));
                               },
                             ),
                           ],
@@ -191,5 +197,60 @@ class _GameLobbyState extends State<GameLobby> {
         ),
       ),
     );
+  }
+}
+
+class GameJoin extends StatefulWidget {
+  const GameJoin({super.key});
+
+  @override
+  State<GameJoin> createState() => _GameJoinState();
+}
+
+class _GameJoinState extends State<GameJoin> {
+  final _enterUserNameController = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('ユーザ名指定'),
+          leading: IconButton(
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(
+                  context, "/MainPage", (r) => false);
+            },
+            icon: Icon(Icons.arrow_back_ios),
+          ),
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              TextField(
+                controller: _enterUserNameController,
+              ),
+              ElevatedButton(
+                  onPressed: () async {
+                    if (_enterUserNameController.text == '') {
+                      _enterUserNameController.text = '名無しさん';
+                    }
+
+                    // print(imgURL);
+                    await Navigator.of(context)
+                        .pushNamed(
+                      "/GamePage",
+                      arguments: joinRoomModel(
+                        name: _enterUserNameController.text,
+                        roomid: 'room1',
+                      ),
+                    )
+                        .then((value) {
+                      // 再描画
+                      setState(() {});
+                    });
+                  },
+                  child: Text('data'))
+            ],
+          ),
+        ));
   }
 }

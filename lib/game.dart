@@ -191,13 +191,23 @@ class _GamePageState extends State<GamePage> {
     // print(roomId);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Game')),
+      appBar: AppBar(
+        title: Text('Game'),
+        leading: IconButton(
+          onPressed: () {
+            resetGame();
+            Navigator.pushNamedAndRemoveUntil(
+                context, "/MainPage", (r) => false);
+          },
+          icon: Icon(Icons.arrow_back_ios),
+        ),
+      ),
       body: Stack(
         children: [
           Column(
             // mainAxisSize: MainAxisSize.min,
             children: [
-              Text('(ユーザ)さん'),
+              Text(name),
               Text(
                 '現在の参加者 ' + roomPlayers.toString() + '名',
                 style: TextStyle(fontSize: 15),
@@ -217,7 +227,7 @@ class _GamePageState extends State<GamePage> {
                   style: TextStyle(fontSize: 150),
                 ),
               ),
-              Text(goukei.toString()),
+              // Text(goukei.toString()),
               ElevatedButton(
                 child: Text('次へ'),
                 onPressed: () {
@@ -283,7 +293,7 @@ class _GamePageState extends State<GamePage> {
 
   void _joinGroup(String roomId) {
     print('次のグループに参加したよ' + roomId);
-    _socket.emit("roomJoin", {"roomId": roomId, "usrName": 'kasou'});
+    _socket.emit("roomJoin", {"roomId": roomId, "usrName": name});
   }
 
   void _gameStartPost() async {
@@ -516,25 +526,65 @@ class _KogeraWaitState extends State<KogeraWait> {
 }
 
 class KogeraResultPage extends StatelessWidget {
-  const KogeraResultPage({super.key});
-
+  KogeraResultPage({super.key});
+  Color backGroundColor = Colors.white;
   @override
   Widget build(BuildContext context) {
+    bool? win = null;
+    if (myid == kogeraResultData['winUserId']) {
+      win = true;
+      print('a');
+      backGroundColor = Color.fromRGBO(255, 250, 200, 1);
+    } else if (myid == kogeraResultData['loseUserId']) {
+      win = false;
+      backGroundColor = Color.fromRGBO(255, 148, 136, 1);
+      print('a');
+    }
     return Scaffold(
       appBar: AppBar(title: Text('結果')),
+      backgroundColor: backGroundColor,
       body: SafeArea(
-          child: Column(
-        children: [
-          Text('Winneeeeerrrr IS ' + kogeraResultData['winUserId']),
-          Text('LOSE IS ' + kogeraResultData['loseUserId']),
-          Text(serachUserName(kogeraResultData['winUserId'])),
-          ElevatedButton(
-              onPressed: () {
-                resetGame();
-                Navigator.popUntil(context, ModalRoute.withName('/GamePage'));
-              },
-              child: Text('戻る'))
-        ],
+          child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (win == null)
+              Text('aaa')
+            else if (win)
+              Text(
+                'WIN',
+                style: TextStyle(fontSize: 100),
+              )
+            else
+              Text('LOSE'),
+            Container(
+              child: Column(children: [
+                Text(serachUserName(kogeraResultData['winUserId']) + ' WIN',
+                    style: TextStyle(fontSize: 20)),
+                Text(serachUserName(kogeraResultData['loseUserId']) + ' LOSE',
+                    style: TextStyle(fontSize: 20)),
+              ]),
+            ),
+            SizedBox(
+              height: 50,
+            ),
+            Text('合計は ' + goukei.toString() + ' でした。',
+                style: TextStyle(fontSize: 20)),
+            Text(
+              serachUserName(kogeraResultData['loseUserId']) +
+                  'さんが ' +
+                  kogeraResultData['kogeraPreSayNumber'] +
+                  'と言った',
+              style: TextStyle(fontSize: 20),
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  resetGame();
+                  Navigator.popUntil(context, ModalRoute.withName('/GamePage'));
+                },
+                child: Text('戻る'))
+          ],
+        ),
       )),
     );
   }
@@ -549,6 +599,7 @@ serachUserName(userId) {
       return userList[i][1];
     }
   }
+  return 'error';
 }
 
 void resetGame() {
