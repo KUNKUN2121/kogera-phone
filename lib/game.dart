@@ -19,7 +19,7 @@ String myid = '';
 String kogeraSayUserName = '';
 var userList;
 var kogeraResultData;
-bool firstGame = false;
+bool firstGame = true;
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -80,10 +80,13 @@ class _GamePageState extends State<GamePage> {
 
       // グループ配信
       _socket.on("groupAll", (data) {
+        goukei = data['goukei'].toDouble();
         userList = data['userList'];
+        firstGame = false;
         // print('client 受信 ID : ' + data['id']);
         print(data['goukei']);
         print(userList);
+        roomPlayers = userList.length;
         for (int i = 0; i < userList.length; i++) {
           if (userList[i][0] == myid) {
             myCard = data['userList'][i][3];
@@ -91,16 +94,6 @@ class _GamePageState extends State<GamePage> {
         }
         setState(() {});
       });
-      // _socket.on("client", (data) {
-      //   print('client 受信 ID : ' + data['id']);
-      //   switch (data['id']) {
-      //     case 'card':
-      //       myCard = data['value'];
-      //       setState(() {});
-      //       break;
-      //     default:
-      //   }
-      // });
       _socket.on("client", (data) {
         print('client 受信 ID : ' + data['id']);
         switch (data['id']) {
@@ -120,19 +113,9 @@ class _GamePageState extends State<GamePage> {
           default:
         }
       });
-      // 合計値取得
-      // _socket.on("groupGoukei", (data) {
-      // goukei = data['value'].toDouble();
-      // });
-
-      _socket.on("groupAll", (data) {
-        goukei = data['goukei'].toDouble();
-        setState(() {});
-      });
 
       // kogeraWait
       _socket.on("kogeraPost", (data) async {
-        firstGame = true;
         if (myid == data['sayKogeraUser']) {
           return;
         }
@@ -221,6 +204,13 @@ class _GamePageState extends State<GamePage> {
                 '現在の参加者 ' + roomPlayers.toString() + '名',
                 style: TextStyle(fontSize: 15),
               ),
+              GestureDetector(
+                onTap: () {
+                  _gameStartPost();
+                },
+                child: Text("DEBUG"),
+              ),
+
               if (firstGame)
                 ElevatedButton(
                   child: Text('ゲームを開始する。'),
@@ -238,15 +228,18 @@ class _GamePageState extends State<GamePage> {
                 ),
               ),
               // Text(goukei.toString()),
-              ElevatedButton(
-                child: Text('次へ'),
-                onPressed: () {
-                  _gameStartPost();
-                },
-              ),
-              ElevatedButton(
-                child: Text('合計'),
-                onPressed: () {},
+              // ElevatedButton(
+              //   child: Text('次へ'),
+              //   onPressed: () {
+              //     _gameStartPost();
+              //   },
+              // ),
+              // ElevatedButton(
+              //   child: Text('合計'),
+              //   onPressed: () {},
+              // ),
+              SizedBox(
+                height: 100,
               ),
               ElevatedButton(
                 child: Text(
@@ -567,7 +560,10 @@ class KogeraResultPage extends StatelessWidget {
                 style: TextStyle(fontSize: 100),
               )
             else
-              Text('LOSE'),
+              Text(
+                'LOSE',
+                style: TextStyle(fontSize: 100),
+              ),
             Container(
               child: Column(children: [
                 Text(serachUserName(kogeraResultData['winUserId']) + ' WIN',
@@ -614,6 +610,7 @@ serachUserName(userId) {
 }
 
 void resetGame() {
+  firstGame = false;
   myCard = '';
   roomPlayers = 0;
   goukei = -100;
