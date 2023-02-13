@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:kogera_phone/main.dart';
+import 'package:kogera_phone/setting.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 import 'joinRoom.dart';
 import 'dialog.dart';
@@ -155,7 +156,7 @@ class _GamePageState extends State<GamePage> {
     }
 
     _socket = io(
-      "http://dev.kun.pink:3000",
+      socketURL,
       OptionBuilder()
           .setTransports(['websocket'])
           .enableForceNew()
