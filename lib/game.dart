@@ -261,12 +261,12 @@ class _GamePageState extends State<GamePage> {
                             ElevatedButton(
                                 child: Text("はい"),
                                 onPressed: () {
+                                  if (roomPlayers <= 1) {
+                                    return;
+                                  }
                                   Navigator.pop(context);
                                   isYouKogera = true;
-                                  // Navigator.push(
-                                  //     context,
-                                  //     MaterialPageRoute(
-                                  //         builder: (context) => KogeraPage()));
+
                                   kogeraPost();
                                   // _gameStartPost();
                                 }),
@@ -402,13 +402,12 @@ class _KogeraPageState extends State<KogeraPage> {
   bool isEnterNum = false;
   bool? win = null;
   var kogeraPreSayUserId = userList[0][0];
-  List<DropdownMenuItem<Object>> testListDa = userList
-      .map(
-        (str) => DropdownMenuItem(
-          child: Text((str[1])),
-          value: str[0],
-        ),
-      )
+  List<DropdownMenuItem<Object>> playerDDMenuList = userList
+      .where((str) => str[0] != myid)
+      .map((str) => DropdownMenuItem(
+            child: Text((str[1])),
+            value: str[0],
+          ))
       // castでデータ型をあわせる。
       .cast<DropdownMenuItem<Object>>()
       .toList();
@@ -472,7 +471,7 @@ class _KogeraPageState extends State<KogeraPage> {
               Text('こげらする前に数字を言ったユーザを選択してください。'),
               DropdownButton(
                   hint: Text("選択してください"),
-                  items: testListDa,
+                  items: playerDDMenuList,
                   value: kogeraPreSayUserId,
                   onChanged: (value) {
                     print(value);
