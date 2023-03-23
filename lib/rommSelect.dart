@@ -227,6 +227,7 @@ class _GameJoinState extends State<GameJoin> {
             children: [
               TextField(
                 controller: _enterUserNameController,
+                decoration: InputDecoration(hintText: 'ユーザーを入力してください'),
               ),
               ElevatedButton(
                   onPressed: () async {
