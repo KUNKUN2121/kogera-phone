@@ -400,7 +400,7 @@ class _KogeraPageState extends State<KogeraPage> {
   _KogeraPageState({required this.socket});
   final _enterSayNum = TextEditingController();
   bool isEnterNum = false;
-  bool win = false;
+  bool? win = null;
   var kogeraPreSayUserId = userList[0][0];
   List<DropdownMenuItem<Object>> testListDa = userList
       .map(
@@ -419,19 +419,12 @@ class _KogeraPageState extends State<KogeraPage> {
     return WillPopScope(
       onWillPop: _willPopCallback,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('数値入力'),
-          // 戻るボタン非表示
-          automaticallyImplyLeading: false,
-        ),
-        body: Stack(children: [
-          Center(
-            child: Column(
-              children: [inputNumber(title: 'aaa')],
-            ),
+          appBar: AppBar(
+            title: Text('数値入力'),
+            // 戻るボタン非表示
+            automaticallyImplyLeading: false,
           ),
-        ]),
-      ),
+          body: winOrLose()),
     );
   }
 
@@ -439,49 +432,59 @@ class _KogeraPageState extends State<KogeraPage> {
     return true;
   }
 
-  Widget inputNumber({
-    required String title,
-    // required String description,
-    // required IconData icon,
-    // required Key key,
-    // required Function()? onPressed,
-  }) {
+  Widget winOrLose() {
     return Center(
-      child: Column(children: [
-        Text('最後に言った数字を入力してください'),
-        TextField(
-          controller: _enterSayNum,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(
+          "カードの合計 : " + goukei.toString(),
+          style: TextStyle(fontSize: 30),
         ),
-        DropdownButton(
-            hint: Text("選択してください"),
-            items: testListDa,
-            value: kogeraPreSayUserId,
-            onChanged: (value) {
-              print(value);
-              kogeraPreSayUserId = value;
+        Text("あなたのカード : " + myCard.toString(), style: TextStyle(fontSize: 30)),
+        SizedBox(
+          width: 200,
+          height: 70,
+          child: ElevatedButton(
+            child: const Text('あなたの勝ち'),
+            onPressed: () {
+              win = true;
               setState(() {});
-            }),
-
-        /// ビルダー
-        ///    作ったウゾ
-        ElevatedButton(
+            },
+          ),
+        ),
+        SizedBox(
+          height: 10,
+        ),
+        SizedBox(
+          width: 200,
+          height: 70,
+          child: ElevatedButton(
+            child: const Text('あなたの負け'),
+            onPressed: () {
+              win = false;
+              kogeraPreSayUserId = null;
+              setState(() {});
+            },
+          ),
+        ),
+        if (win == true)
+          Column(
+            children: [
+              Text('こげらする前に数字を言ったユーザを選択してください。'),
+              DropdownButton(
+                  hint: Text("選択してください"),
+                  items: testListDa,
+                  value: kogeraPreSayUserId,
+                  onChanged: (value) {
+                    print(value);
+                    kogeraPreSayUserId = value;
+                    setState(() {});
+                  }),
+            ],
+          ),
+        if (win != null)
+          ElevatedButton(
+            child: Text('続行'),
             onPressed: () async {
-              if (_enterSayNum.text == '') {
-                // 未入力の場合returnする。
-                return;
-              }
-              // Win Loseはクライントが判断する。
-              print('合計は ' + goukei.toString());
-              print('言ったのは ' + _enterSayNum.text.toString());
-              if (goukei > double.parse(_enterSayNum.text)) {
-                print('負け');
-                win = false;
-              } else {
-                // 合計が 入力した値よりも小さい
-                print('勝ち');
-                win = true;
-              }
-
               socket.emit("kogeraResultPost", {
                 "roomId": 'room1',
                 "goukei": goukei,
@@ -491,17 +494,13 @@ class _KogeraPageState extends State<KogeraPage> {
                 "win": win,
                 // こげらの前の人のユーザID
                 "kogeraPreSayUserId": kogeraPreSayUserId,
-                "kogeraPreSayNumber": _enterSayNum.text,
               });
-              // 画面以降
-              // Navigator.push(context,
-              //     MaterialPageRoute(builder: (context) => KogeraResultPage()));
 
               isEnterNum = true;
 
               // setState(() {});
             },
-            child: Text('続行'))
+          )
       ]),
     );
   }
@@ -546,7 +545,7 @@ class KogeraResultPage extends StatelessWidget {
     bool? win = null;
     if (myid == kogeraResultData['winUserId']) {
       win = true;
-      print('a');
+      print(kogeraResultData);
       backGroundColor = Color.fromRGBO(255, 250, 200, 1);
     } else if (myid == kogeraResultData['loseUserId']) {
       win = false;
@@ -564,7 +563,7 @@ class KogeraResultPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (win == null)
-                Text('aaa')
+                Text('あなたは関係ない')
               else if (win)
                 Text(
                   'WIN',
@@ -577,8 +576,9 @@ class KogeraResultPage extends StatelessWidget {
                 ),
               Container(
                 child: Column(children: [
-                  Text(serachUserName(kogeraResultData['winUserId']) + ' WIN',
-                      style: TextStyle(fontSize: 20)),
+                  if (kogeraResultData['win'] == true)
+                    Text(serachUserName(kogeraResultData['winUserId']) + ' WIN',
+                        style: TextStyle(fontSize: 20)),
                   Text(serachUserName(kogeraResultData['loseUserId']) + ' LOSE',
                       style: TextStyle(fontSize: 20)),
                 ]),
@@ -588,13 +588,9 @@ class KogeraResultPage extends StatelessWidget {
               ),
               Text('合計は ' + goukei.toString() + ' でした。',
                   style: TextStyle(fontSize: 20)),
-              Text(
-                serachUserName(kogeraResultData['loseUserId']) +
-                    'さんが ' +
-                    kogeraResultData['kogeraPreSayNumber'] +
-                    'と言った',
-                style: TextStyle(fontSize: 20),
-              ),
+              if (kogeraResultData['win'] == true) winMessage(),
+              if (kogeraResultData['win'] == false) loseMessage(),
+              if (kogeraResultData['win'] == null) winMessage(),
               ElevatedButton(
                 onPressed: () {
                   socket.emit("gameEnd", {"roomId": roomId});
@@ -605,6 +601,24 @@ class KogeraResultPage extends StatelessWidget {
           ),
         )),
       ),
+    );
+  }
+
+  Widget winMessage() {
+    return Text(
+      serachUserName(kogeraResultData['winUserId']) +
+          'さんが コゲラした。\n ' +
+          serachUserName(kogeraResultData['loseUserId']) +
+          'さんが言った数値は合計を超えていた',
+      style: TextStyle(fontSize: 20),
+    );
+  }
+
+  Widget loseMessage() {
+    return Text(
+      serachUserName(kogeraResultData['loseUserId']) +
+          'さんが コゲラしたが、\nまだ数値は合計に達していなかった',
+      style: TextStyle(fontSize: 20),
     );
   }
 
@@ -634,26 +648,3 @@ void resetGame() {
   error = false;
   kogeraSayUserName = '';
 }
-
-
-// class Result extends StatefulWidget {
-//   const Result({super.key});
-
-//   @override
-//   State<Result> createState() => _ResultState();
-// }
-
-// class _ResultState extends State<Result> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Result'),
-//       ),
-//       body: Center(
-//         child: Column(children: [Text('Result')]),
-//       ),
-//     );
-//   }
-// }
-

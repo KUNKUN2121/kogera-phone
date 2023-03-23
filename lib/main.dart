@@ -68,10 +68,10 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               child: Text('ルーム作成'),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RoomCreate()),
-                );
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(builder: (context) => RoomCreate()),
+                // );
               },
             ),
             ElevatedButton(
